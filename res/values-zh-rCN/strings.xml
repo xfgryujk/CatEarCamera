@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    
+    <string name="app_name">猫耳相机</string>
+    
+    <string name="failed_to_load_classifier">加载分类器失败</string>
+    <string name="failed_to_load_image">加载图片失败</string>
+    <string name="failed_to_open_camera">打开相机失败</string>
+    <string name="failed_to_create_directory">创建文件夹失败</string>
+    <string name="failed_to_write_file">写文件失败</string>
+    <string name="saved_to">已保存到</string>
+    
+    <string name="EV">曝光度</string>
+    <string name="white_balance">白平衡</string>
+    <string name="resolution">分辨率</string>
+    <string name="ISO">感光度</string>
+    <string name="thread_count">线程数</string>
+    <string name="path">保存路径</string>
+    
+    <string name="image_type">图片类型</string>
+    <string-array name="image_type_string">
+        <item>自定义</item>
+        <item>黑色猫耳</item>
+        <item>豹纹猫耳</item>
+        <item>双马尾</item>
+        <item>兵库北</item>
+        <item>金馆长</item>
+        <item>暴走漫画</item>
+    </string-array>
+    <string name="image_path">图片路径</string>
+    <string name="preview">预览</string>
+    <string name="keep_scale">约束缩放比例</string>
+    <string name="min_face_size">最小人脸边长</string>
+    <string name="scale_factor">扫描矩形缩放比例</string>
+    <string name="debug_mode">调试模式</string>
+    
+    <string name="error">错误</string>
+    <string name="ok">确定</string>
+    <string name="cancel">取消</string>
+    <string name="yes">是</string>
+    <string name="no">否</string>
+    
+</resources>

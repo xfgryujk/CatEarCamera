@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    
+    <string name="app_name">Cat Ear Camera</string>
+    
+    <string name="failed_to_load_classifier">Failed to load classifier</string>
+    <string name="failed_to_load_image">Failed to load image</string>
+    <string name="failed_to_open_camera">Failed to open camera</string>
+    <string name="failed_to_create_directory">Failed to create directory</string>
+    <string name="failed_to_write_file">Failed to write file</string>
+    <string name="saved_to">Saved to</string>
+    
+    <string name="EV">EV</string>
+    <string name="white_balance">White balance</string>
+    <string name="resolution">Resolution</string>
+    <string name="ISO">ISO</string>
+    <string name="thread_count">Thread count</string>
+    <string name="path">Path</string>
+    
+    <string name="image_type">Image type</string>
+    <string-array name="image_type_string">
+        <item>Custom</item>
+        <item>Black cat ear</item>
+        <item>Leopard cat ear</item>
+        <item>Twin tail</item>
+        <item>Kana</item>
+        <item>Mr Kim</item>
+        <item>Rage comic</item>
+    </string-array>
+    <string name="image_path">Image path</string>
+    <string name="preview">Preview</string>
+    <string name="keep_scale">Keep scale</string>
+    <string name="min_face_size">Min face size</string>
+    <string name="scale_factor">Scale factor</string>
+    <string name="debug_mode">Debug mode</string>
+    
+    <string name="error">Error</string>
+    <string name="ok">OK</string>
+    <string name="cancel">Cancel</string>
+    <string name="yes">Yes</string>
+    <string name="no">No</string>
+    
+</resources>

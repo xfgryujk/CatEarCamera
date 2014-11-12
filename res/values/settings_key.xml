@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    
+    <string name="pref_EV">EV</string>
+    <string name="pref_white_balance">white_balance</string>
+    <string name="pref_resolution">resolution</string>
+    <string name="pref_ISO">ISO</string>
+    <string name="pref_path">path</string>
+    
+    <string name="pref_image_type">image_type</string>
+    <string name="pref_image_path">image_path</string>
+    <string name="pref_preview">preview</string>
+    <string name="pref_keep_scale">keep_scale</string>
+    <string name="pref_min_face_size">min_face_size</string>
+    <string name="pref_scale_factor">scale_factor</string>
+    <string name="pref_debug_mode">debug_mode</string>
+    
+</resources>
