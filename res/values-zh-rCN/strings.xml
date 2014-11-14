@@ -10,6 +10,7 @@
     <string name="failed_to_write_file">写文件失败</string>
     <string name="saved_to">已保存到</string>
     
+    <string name="camera_id">摄像头ID</string>
     <string name="EV">曝光度</string>
     <string name="white_balance">白平衡</string>
     <string name="resolution">分辨率</string>

@@ -4,6 +4,7 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -29,8 +30,10 @@ import android.graphics.Paint;
 import android.graphics.RectF;
 import android.hardware.Camera;
 import android.hardware.Camera.AutoFocusCallback;
+import android.hardware.Camera.CameraInfo;
 import android.hardware.Camera.PictureCallback;
 import android.hardware.Camera.PreviewCallback;
+import android.os.Build.VERSION;
 import android.os.Handler;
 import android.os.Message;
 import android.preference.PreferenceManager;
@@ -51,7 +54,8 @@ class CameraPreview extends SurfaceView implements SurfaceHolder.Callback {
 	protected MainActivity mActivity;
 	protected SurfaceHolder mHolder;
 	protected Camera mCamera = null;
-	protected Camera.Size mPreviewSize = null;
+	protected boolean mIsFacingBack;
+	protected Camera.Size mPreviewSize;
 	protected int mPictureWidth, mPictureHeight;
 	/** Used to resize the picture to improve performance */
 	protected float mPreviewScale, mPictureScale;
@@ -194,7 +198,10 @@ class CameraPreview extends SurfaceView implements SurfaceHolder.Callback {
 		
 		// Open camera
 		try {
-			mCamera = Camera.open();
+			if(VERSION.SDK_INT >= 9)
+				mCamera = Camera.open(SettingsManager.mCameraID);
+			else
+				mCamera = Camera.open();
 		} catch (Exception e) {
 			e.printStackTrace();
 			mCamera = null;
@@ -215,6 +222,16 @@ class CameraPreview extends SurfaceView implements SurfaceHolder.Callback {
 			return;
 		}
 		
+		if(VERSION.SDK_INT >= 9)
+		{
+			CameraInfo info = new CameraInfo();
+			Camera.getCameraInfo(SettingsManager.mCameraID, info);
+			mIsFacingBack = info.facing == CameraInfo.CAMERA_FACING_BACK;
+			Log.i(TAG, "Camera orientation " + info.orientation);
+		}
+		else
+			mIsFacingBack = true;
+		
 		// Set parameters
 		Camera.Parameters params = mCamera.getParameters();
 		DisplayMetrics dm = new DisplayMetrics();
@@ -224,22 +241,19 @@ class CameraPreview extends SurfaceView implements SurfaceHolder.Callback {
 		params.setWhiteBalance(SettingsManager.mWhiteBalance);
 		
 		List<Camera.Size> sizes;
-		if(mPreviewSize == null)
+		// Largest preview size
+		sizes = params.getSupportedPreviewSizes();
+		int maxPixels = 0;
+		for (Camera.Size size : sizes)
 		{
-			// Largest preview size
-			sizes = params.getSupportedPreviewSizes();
-			int maxPixels = 0;
-			for (Camera.Size size : sizes)
+			int pixels = size.width * size.height;
+			if (maxPixels < pixels)
 			{
-				int pixels = size.width * size.height;
-				if (maxPixels < pixels)
-				{
-					maxPixels    = pixels;
-					mPreviewSize = size;
-				}
+				maxPixels    = pixels;
+				mPreviewSize = size;
 			}
-			mPreviewScale = Math.min((float)dm.heightPixels / (float)mPreviewSize.height, (float)dm.widthPixels / (float)mPreviewSize.width);
 		}
+		mPreviewScale = Math.min((float)dm.heightPixels / (float)mPreviewSize.height, (float)dm.widthPixels / (float)mPreviewSize.width);
 		params.setPreviewSize(mPreviewSize.width, mPreviewSize.height);
 				
 		sizes = params.getSupportedPictureSizes();
@@ -318,13 +332,17 @@ class CameraPreview extends SurfaceView implements SurfaceHolder.Callback {
 		if(mPreviewBitmap != null)
 		{
 			mActivity.mResultPreview.setImageBitmap(null);
-			mPreviewBitmap.recycle();
-			mPreviewBitmap = null;
+			synchronized (mPreviewBitmap) {
+				mPreviewBitmap.recycle();
+				mPreviewBitmap = null;
+			}
 		}
 	}
 	
 	/** Auto focus */
 	public void onClick() {
+		if(mCamera == null)
+			return;
 		mHandler.removeMessages(MSG_HIDE_FOCUS_RESULT);
 		mActivity.mFocusResult.setVisibility(INVISIBLE);
 		mCamera.autoFocus(new AutoFocusCallback() {
@@ -388,13 +406,16 @@ class CameraPreview extends SurfaceView implements SurfaceHolder.Callback {
 					faces = detectFaces(previewData, rotation, mYuv, mRgba, mGray);
 				}
 				
-				synchronized (mPreviewBitmap) {
-					//Log.i(TAG, "Drawing cat ear");
-					mPreviewBitmap.eraseColor(Color.TRANSPARENT);
-					drawCatEar(mPreviewBitmap, rotation, faces);
-					
-					if(!mHandler.hasMessages(MSG_UPDATE_PREVIEW))
-						mHandler.sendEmptyMessage(MSG_UPDATE_PREVIEW);
+				if(mPreviewBitmap != null)
+				{
+					synchronized (mPreviewBitmap) {
+						//Log.i(TAG, "Drawing cat ear");
+						mPreviewBitmap.eraseColor(Color.TRANSPARENT);
+						drawCatEar(mPreviewBitmap, rotation, faces);
+						
+						if(!mHandler.hasMessages(MSG_UPDATE_PREVIEW))
+							mHandler.sendEmptyMessage(MSG_UPDATE_PREVIEW);
+					}
 				}
 			}
 		}
@@ -426,25 +447,31 @@ class CameraPreview extends SurfaceView implements SurfaceHolder.Callback {
 	};
 	
 	public void takePicture() {
-		// Take picture
-		mCamera.takePicture(null, null, new PictureCallback() {
-			@SuppressLint("SimpleDateFormat")
-			public void onPictureTaken(byte[] data, Camera camera) {
-				// Deal the picture
-				mResultBitmap = BitmapFactory.decodeByteArray(data, 0, data.length);
-				Mat rgba = Utils.bitmapToMat(mResultBitmap);
-				mResultBitmap.recycle();
-				List<Rect> faces = detectFaces(rgba, mRotation); // Will rotate rgba
-				mResultBitmap = Bitmap.createBitmap(rgba.cols(), rgba.rows(), Bitmap.Config.ARGB_8888);
-				Utils.matToBitmap(rgba, mResultBitmap); // Make mResultBitmap mutable
-				drawCatEar(mResultBitmap, 0, faces);
-				
-				// Preview
-		        mActivity.startActivity(new Intent(mActivity, PreviewActivity.class));
+		if(mCamera == null)
+			return;
+		try {
+			// Take picture
+			mCamera.takePicture(null, null, new PictureCallback() {
+				@SuppressLint("SimpleDateFormat")
+				public void onPictureTaken(byte[] data, Camera camera) {
+					// Deal the picture
+					mResultBitmap = BitmapFactory.decodeByteArray(data, 0, data.length);
+					Mat rgba = Utils.bitmapToMat(mResultBitmap);
+					mResultBitmap.recycle();
+					List<Rect> faces = detectFaces(rgba, mRotation); // Will rotate rgba
+					mResultBitmap = Bitmap.createBitmap(rgba.cols(), rgba.rows(), Bitmap.Config.ARGB_8888);
+					Utils.matToBitmap(rgba, mResultBitmap); // Make mResultBitmap mutable
+					drawCatEar(mResultBitmap, 0, faces);
+					
+					// Preview
+			        mActivity.startActivity(new Intent(mActivity, PreviewActivity.class));
 
-				camera.startPreview();
-			}
-		});
+					camera.startPreview();
+				}
+			});
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
 	}
 	
 	protected List<Rect> detectFaces(byte[] YUVdata, int rotation, Mat yuv, Mat rgba, Mat gray) {
@@ -452,13 +479,15 @@ class CameraPreview extends SurfaceView implements SurfaceHolder.Callback {
 		yuv.put(0, 0, YUVdata);
 		Imgproc.cvtColor(yuv, rgba, Imgproc.COLOR_YUV420sp2RGB, 4);
 		Imgproc.resize(rgba, rgba, new Size(mPreviewSize.width * mPreviewScale, mPreviewSize.height * mPreviewScale));
-		rotateMat(rgba, rotation);
+		rotateMat(rgba, mIsFacingBack ? rotation : 360 - rotation);
+		if(!mIsFacingBack) // It is inverse in preview
+			Core.flip(rgba, rgba, 1);
 		Imgproc.cvtColor(rgba, gray, Imgproc.COLOR_RGBA2GRAY, 4);
 		return doDetectFaces(true, gray);
 	}
 	
 	protected List<Rect> detectFaces(Mat rgba, int rotation) {
-		rotateMat(rgba, rotation);
+		rotateMat(rgba, mIsFacingBack ? rotation : 360 - rotation);
 		Mat gray = new Mat();
 		Imgproc.cvtColor(rgba, gray, Imgproc.COLOR_RGBA2GRAY, 4);
 		// Improve performance
@@ -477,10 +506,23 @@ class CameraPreview extends SurfaceView implements SurfaceHolder.Callback {
 		}
 		
 		// Remove repeated faces
-		for(Rect r1 : faces)
-			for(Rect r2 : faces)
-				if(r1 != r2 && r1.x >= r2.x && r1.y >= r2.y && r1.width <= r2.width && r1.height <= r2.height)
-					faces.remove(r2);
+		for(Iterator<Rect> it1 = faces.iterator(); it1.hasNext(); )
+		{
+			Rect r1 = it1.next();
+			boolean modified = false;
+			for(Iterator<Rect> it2 = faces.iterator(); it2.hasNext(); )
+			{
+				Rect r2 = it2.next();
+				if(r1 != r2 && r1.x >= r2.x && r1.y >= r2.y 
+						&& r1.x + r1.width <= r2.x + r2.width && r1.y + r1.height <= r2.y + r2.height)
+				{
+					it2.remove();
+					modified = true;
+				}
+			}
+			if(modified)
+				it1 = faces.listIterator(faces.indexOf(r1));
+		}
 		
 		// Restore to the picture before resize()
 		if(!preview)
@@ -514,8 +556,7 @@ class CameraPreview extends SurfaceView implements SurfaceHolder.Callback {
 	
 	/** Call detectFaces before drawCatEar ! */
 	protected void drawCatEar(Bitmap bmp, int rotation, List<Rect> faces) {
-		Canvas canvas = new Canvas();
-		canvas.setBitmap(bmp);
+		Canvas canvas = new Canvas(bmp);
 		
 		// Rotate
 		canvas.translate(bmp.getWidth() / 2, bmp.getHeight() / 2);
@@ -553,7 +594,7 @@ class CameraPreview extends SurfaceView implements SurfaceHolder.Callback {
 	}
 
 	protected long mLastFPSTime = System.currentTimeMillis();
-	private int mFrameCount = 0;
+	private volatile int mFrameCount = 0;
 	private String mFPSString = "";
 	/** Output FPS, scales, rectangles, etc. */
 	@SuppressLint("DefaultLocale")

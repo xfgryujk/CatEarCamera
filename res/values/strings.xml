@@ -10,6 +10,7 @@
     <string name="failed_to_write_file">Failed to write file</string>
     <string name="saved_to">Saved to</string>
     
+    <string name="camera_id">Camera ID</string>
     <string name="EV">EV</string>
     <string name="white_balance">White balance</string>
     <string name="resolution">Resolution</string>
