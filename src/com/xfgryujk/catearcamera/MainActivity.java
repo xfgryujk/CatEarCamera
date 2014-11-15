@@ -22,11 +22,11 @@ public class MainActivity extends Activity {
 	protected OrientationEventListener mOrientationListener;
 	
 	/** Used to calculate cat ear rectangle */
-	public static float mXScale, mYScale, mWScale, mHScale;
-	public static final float mDefaultXScale[] = {0.1280f, 0.1614f, 0.5080f, -0.060f, 0.0240f, 0.3240f};
-	public static final float mDefaultYScale[] = {0.3320f, 0.1470f, 0.4440f, -0.180f, 0.2760f, 0.1600f};
-	public static final float mDefaultWScale[] = {1.2700f, 1.2437f, 1.7938f, 0.8976f, 1.1837f, 1.4115f};
-	public static final float mDefaultHScale[] = {0.6695f, 0.2585f, 3.0025f, 0.8835f, 1.6598f, 1.3177f};
+	public float mXScale, mYScale, mWScale, mHScale;
+	public static final float[] mDefaultXScale = {0.1280f, 0.1614f, 0.5080f, 0.2560f, 0.0560f, 0.3240f, 0.0040f, -0.024f};
+	public static final float[] mDefaultYScale = {0.3320f, 0.1470f, 0.4440f, 0.4360f, 0.5520f, 0.1600f, 0.4160f, 0.1800f};
+	public static final float[] mDefaultWScale = {1.2700f, 1.2437f, 1.7938f, 1.6394f, 1.3577f, 1.4115f, 1.1436f, 1.1064f};
+	public static final float[] mDefaultHScale = {0.6695f, 0.2585f, 3.0025f, 1.6509f, 1.7650f, 1.3177f, 1.5444f, 1.2566f};
 
 	
 	@Override

@@ -61,7 +61,7 @@ class CameraPreview extends SurfaceView implements SurfaceHolder.Callback {
 	protected float mPreviewScale, mPictureScale;
 	
 	public volatile int mRotation = 0;
-
+	
 	protected byte[] mPreviewData;
 	protected Bitmap mPreviewBitmap;
 	public volatile boolean mCanThreadsRun = true;
@@ -71,12 +71,12 @@ class CameraPreview extends SurfaceView implements SurfaceHolder.Callback {
 	protected Bitmap mCatEar;
 	protected CascadeClassifier mCascade;
 	
-
+	
 	public CameraPreview(Context context) {
 		super(context);
 		initialize(context);
 	}
-
+	
 	public CameraPreview(Context context, AttributeSet attrs) {
 		super(context, attrs);
 		initialize(context);
@@ -137,16 +137,16 @@ class CameraPreview extends SurfaceView implements SurfaceHolder.Callback {
 			.show();
 		}
 	}
-
+	
 	/** Load the image to be drawn */
 	public void loadImage() {
 		if(SettingsManager.mImageType != -1) // Default image
 		{
 			mCatEar = BitmapFactory.decodeResource(getResources(), SettingsManager.mDefaultImage[SettingsManager.mImageType]);
-			MainActivity.mXScale = MainActivity.mDefaultXScale[SettingsManager.mImageType];
-			MainActivity.mYScale = MainActivity.mDefaultYScale[SettingsManager.mImageType];
-			MainActivity.mWScale = MainActivity.mDefaultWScale[SettingsManager.mImageType];
-			MainActivity.mHScale = MainActivity.mDefaultHScale[SettingsManager.mImageType];
+			mActivity.mXScale = MainActivity.mDefaultXScale[SettingsManager.mImageType];
+			mActivity.mYScale = MainActivity.mDefaultYScale[SettingsManager.mImageType];
+			mActivity.mWScale = MainActivity.mDefaultWScale[SettingsManager.mImageType];
+			mActivity.mHScale = MainActivity.mDefaultHScale[SettingsManager.mImageType];
 		}
 		else
 		{
@@ -162,10 +162,10 @@ class CameraPreview extends SurfaceView implements SurfaceHolder.Callback {
 			}
 			else
 			{
-				MainActivity.mXScale = 0.0f;
-				MainActivity.mYScale = 0.0f;
-				MainActivity.mWScale = 1.0f;
-				MainActivity.mHScale = (float)mCatEar.getHeight() / (float)mCatEar.getWidth();
+				mActivity.mXScale = 0.0f;
+				mActivity.mYScale = 0.0f;
+				mActivity.mWScale = 1.0f;
+				mActivity.mHScale = (float)mCatEar.getHeight() / (float)mCatEar.getWidth();
 			}
 		}
 	}
@@ -193,6 +193,7 @@ class CameraPreview extends SurfaceView implements SurfaceHolder.Callback {
 	}
 	
 	/** Open camera, set parameters, initialize Mats */
+	@SuppressLint("NewApi")
 	public void resetCamera() {
 		releaseCamera();
 		
@@ -583,10 +584,10 @@ class CameraPreview extends SurfaceView implements SurfaceHolder.Callback {
 			
 			// Draw cat ear
 			canvas.drawBitmap(mCatEar, null
-				, new RectF(r.x - r.width * MainActivity.mXScale
-				, r.y - r.height * MainActivity.mYScale
-				, r.x - r.width * MainActivity.mXScale + r.width * MainActivity.mWScale
-				, r.y - r.height * MainActivity.mYScale + r.height * MainActivity.mHScale)
+				, new RectF(r.x - r.width * mActivity.mXScale
+				, r.y - r.height * mActivity.mYScale
+				, r.x - r.width  * mActivity.mXScale + r.width  * mActivity.mWScale
+				, r.y - r.height * mActivity.mYScale + r.height * mActivity.mHScale)
 				, null);
 		}
 		if(SettingsManager.mDebugMode)
@@ -610,13 +611,13 @@ class CameraPreview extends SurfaceView implements SurfaceHolder.Callback {
 		String s = String.format("%s\n%d*%d %d*%d\n%.4f %.4f %.4f %.4f\n"
 			, mFPSString
 			, mPreviewSize.width, mPreviewSize.height, mPictureWidth, mPictureHeight
-			, MainActivity.mXScale, MainActivity.mYScale, MainActivity.mWScale, MainActivity.mHScale);
+			, mActivity.mXScale, mActivity.mYScale, mActivity.mWScale, mActivity.mHScale);
 		
 		for(Rect r : faces)
 			s += String.format("(%d,%d) %d*%d (%d,%d) %d*%d\n"
 				, r.x, r.y, r.width, r.height
-				, Math.round(r.x - r.width * MainActivity.mXScale), Math.round(r.y - r.height * MainActivity.mYScale)
-				, (int)(r.width * MainActivity.mWScale), (int)(r.height * MainActivity.mHScale));
+				, Math.round(r.x - r.width * mActivity.mXScale), Math.round(r.y - r.height * mActivity.mYScale)
+				, (int)(r.width * mActivity.mWScale), (int)(r.height * mActivity.mHScale));
 		
 		TextPaint textPaint = new TextPaint();
 		textPaint.setColor(Color.GREEN);

@@ -27,6 +27,8 @@
         <item>Kana</item>
         <item>Mr Kim</item>
         <item>Rage comic</item>
+        <item>Yao Ming</item>
+        <item>Doge</item>
     </string-array>
     <string name="image_path">Image path</string>
     <string name="preview">Preview</string>

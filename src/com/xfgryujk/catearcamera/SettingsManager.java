@@ -55,7 +55,8 @@ public class SettingsManager {
 	
 	/** Default image index or -1 : custom image */
 	public static int mImageType;
-	public static final int[] mDefaultImage = {R.drawable.catear1, R.drawable.catear2, R.drawable.twintail, R.drawable.kana, R.drawable.kim, R.drawable.baoman};
+	public static final int[] mDefaultImage = {R.drawable.catear1, R.drawable.catear2, R.drawable.twintail, 
+		R.drawable.kana, R.drawable.kim, R.drawable.rage_comic, R.drawable.yao, R.drawable.doge};
 	public static String mImagePath;
 	public static boolean mPreview;
 	public static boolean mKeepScale;
@@ -206,6 +207,7 @@ public class SettingsManager {
 	};
 	
 	protected static OnItemClickListener mOnDialogItemClick = new OnItemClickListener() {
+		@SuppressLint("NewApi")
 		@SuppressWarnings("unchecked")
 		public void onItemClick(final AdapterView<?> adapterView, final View view, final int position, long id) {
 			final Resources res = mMainActivity.getResources();
@@ -216,8 +218,8 @@ public class SettingsManager {
 			
 			switch(position)
 			{
-			case 0:
-				if(VERSION.SDK_INT >= 9) // Camera ID
+			case 0: // Camera ID
+				if(VERSION.SDK_INT >= 9)
 				{
 					int cameraID = mCameraID + 1;
 					if(cameraID >= Camera.getNumberOfCameras())
