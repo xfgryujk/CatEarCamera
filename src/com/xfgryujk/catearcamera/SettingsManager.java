@@ -17,8 +17,8 @@ import android.hardware.Camera;
 import android.hardware.Camera.Parameters;
 import android.hardware.Camera.Size;
 import android.net.Uri;
-import android.os.Environment;
 import android.os.Build.VERSION;
+import android.os.Environment;
 import android.preference.PreferenceManager;
 import android.provider.MediaStore;
 import android.text.InputType;
@@ -34,6 +34,7 @@ import android.widget.AdapterView.OnItemClickListener;
 import android.widget.EditText;
 import android.widget.ListView;
 import android.widget.SeekBar;
+import android.widget.Toast;
 import android.widget.SeekBar.OnSeekBarChangeListener;
 import android.widget.SimpleAdapter;
 import android.widget.TextView;
@@ -232,6 +233,7 @@ public class SettingsManager {
 						mEV           = pref.getInt(res.getString(R.string.pref_EV) + mCameraID, 0);
 						mWhiteBalance = pref.getString(res.getString(R.string.pref_white_balance) + mCameraID, "auto");
 						mResolution   = pref.getInt(res.getString(R.string.pref_resolution) + mCameraID, 0);
+						mISO          = pref.getString(res.getString(R.string.pref_ISO) + mCameraID, "auto");
 						mMainActivity.mCameraPreview.resetCamera();
 						// Update values
 						((HashMap<String, String>)adapterView.getItemAtPosition(position)).put("value", Integer.toString(mCameraID));
@@ -240,6 +242,7 @@ public class SettingsManager {
 						List<Size> sizes2 = mMainActivity.mCameraPreview.getCamera().getParameters().getSupportedPictureSizes();
 						((HashMap<String, String>)adapterView.getItemAtPosition(3)).put("value", 
 								sizes2.get(mResolution).width + " * " + sizes2.get(mResolution).height);
+						((HashMap<String, String>)adapterView.getItemAtPosition(4)).put("value", mISO);
 						mAdapter.notifyDataSetChanged();
 					}
 				}
@@ -299,59 +302,63 @@ public class SettingsManager {
 				break;
 				
 			case 4: // ISO ***** Not every device support!
-				// Test
-				/*String flat = params.flatten();
-				Log.i(TAG, flat);
-				String[] isoValues	= null;
+				String flat = params.flatten();
+				//Log.i("ISO test", flat);
 				String values_keyword = null;
-				String iso_keyword	= null;
+				//String iso_keyword = null;
 				if(flat.contains("iso-values")) {
 					// most used keywords
 					values_keyword = "iso-values";
-					iso_keyword	= "iso";
+					//iso_keyword	= "iso";
 				} else if(flat.contains("iso-mode-values")) {
 					// google galaxy nexus keywords
 					values_keyword = "iso-mode-values";
-					iso_keyword	= "iso";
+					//iso_keyword	= "iso";
 				} else if(flat.contains("iso-speed-values")) {
 					// micromax a101 keywords
 					values_keyword = "iso-speed-values";
-					iso_keyword	= "iso-speed";
+					//iso_keyword	= "iso-speed";
 				} else if(flat.contains("nv-picture-iso-values")) {
 					// LG dual p990 keywords
 					values_keyword = "nv-picture-iso-values";
-					iso_keyword	= "nv-picture-iso";
+					//iso_keyword	= "nv-picture-iso";
 				}
 				// add other eventual keywords here...
-				if(iso_keyword != null) {
+				String iso = null;
+				if(values_keyword != null) {
 					// flatten contains the iso key!!
-					String iso = flat.substring(flat.indexOf(values_keyword));
+					iso = flat.substring(flat.indexOf(values_keyword));
 					iso = iso.substring(iso.indexOf("=") + 1);
 					if(iso.contains(";"))
 						iso = iso.substring(0, iso.indexOf(";"));
-
-					isoValues = iso.split(",");
 					
-					for(String str : isoValues)
-						Log.i(TAG, str);
-				} else {
+					//for(String str : isoValues)
+					//	Log.i("ISO test", str);
+				}/* else {
 					// iso not supported in a known way
-					Log.i(TAG, "ISO is not supported");
+					Log.i("ISO test", "ISO is not supported");
 				}*/
+
+				final String[] defaultISOs = {"auto", "50", "100", "200", "400", "800", "1600", "3200"};
+				final String[] isoValues = values_keyword != null ? iso.split(",") : defaultISOs;
 				
-				final String[] ISOs = {"auto", "50", "100", "200", "400", "800"
-						, "1600", "3200", "sports", "night", "movie"};
 				builder.setTitle(res.getString(R.string.ISO))
-				.setItems(ISOs, new DialogInterface.OnClickListener() {
+				.setItems(isoValues, new DialogInterface.OnClickListener() {
 					public void onClick(DialogInterface dialog, int which) {
-						mISO = ISOs[which];
-						pref.edit().putString(res.getString(R.string.pref_ISO) + mCameraID, mISO).commit();
-						((HashMap<String, String>)adapterView.getItemAtPosition(3)).put("value", mISO);
-						mAdapter.notifyDataSetChanged();
-						params.set("iso", mISO);
-						params.set("iso-speed", mISO);
-						params.set("nv-picture-iso", mISO);
-						camera.setParameters(params);
+						params.set("iso", isoValues[which]);
+						params.set("iso-speed", isoValues[which]);
+						params.set("nv-picture-iso", isoValues[which]);
+						try {
+							camera.setParameters(params); // Will throw if this ISO is not supported
+							mISO = isoValues[which];
+							pref.edit().putString(res.getString(R.string.pref_ISO) + mCameraID, mISO).commit();
+							((HashMap<String, String>)adapterView.getItemAtPosition(position)).put("value", mISO);
+							mAdapter.notifyDataSetChanged();
+						} catch(Exception e) {
+							e.printStackTrace();
+							Toast.makeText(mMainActivity, mMainActivity.getResources().getString(R.string.this_ISO_is_not_supported), 
+									Toast.LENGTH_SHORT).show();
+						}
 					}
 				})
 				.create()

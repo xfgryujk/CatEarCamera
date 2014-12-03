@@ -522,7 +522,10 @@ class CameraPreview extends SurfaceView implements SurfaceHolder.Callback {
 				}
 			}
 			if(modified)
-				it1 = faces.listIterator(faces.indexOf(r1));
+				for(it1 = faces.iterator(); it1.hasNext(); )
+					if(it1.next() == r1)
+						break;
+				//it1 = faces.listIterator(faces.indexOf(r1));
 		}
 		
 		// Restore to the picture before resize()

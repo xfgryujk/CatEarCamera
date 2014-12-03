@@ -3,6 +3,7 @@
     
     <string name="app_name">猫耳相机</string>
     
+    <string name="this_ISO_is_not_supported">不支持此ISO</string>
     <string name="failed_to_load_classifier">加载分类器失败</string>
     <string name="failed_to_load_image">加载图片失败</string>
     <string name="failed_to_open_camera">打开相机失败</string>

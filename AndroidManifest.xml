@@ -1,15 +1,16 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="com.xfgryujk.catearcamera"
-    android:versionCode="6"
-    android:versionName="1.5" >
+    android:versionCode="7"
+    android:versionName="1.5.1" >
 
     <supports-screens
+        android:resizeable="true"
         android:anyDensity="true"
         android:largeScreens="true"
         android:normalScreens="true"
-        android:resizeable="true"
-        android:smallScreens="true" />
+        android:smallScreens="true"
+        android:xlargeScreens="true"/>
 
     <uses-sdk
         android:minSdkVersion="8"
