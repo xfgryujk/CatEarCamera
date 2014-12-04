@@ -14,6 +14,7 @@
     <string name="camera_id">摄像头ID</string>
     <string name="EV">曝光度</string>
     <string name="white_balance">白平衡</string>
+    <string name="preview_resolution">预览分辨率</string>
     <string name="resolution">分辨率</string>
     <string name="ISO">感光度</string>
     <string name="thread_count">线程数</string>
@@ -34,7 +35,7 @@
     <string name="image_path">图片路径</string>
     <string name="preview">预览</string>
     <string name="keep_scale">约束缩放比例</string>
-    <string name="min_face_size">最小人脸边长</string>
+    <string name="min_face_scale">最小人脸比例</string>
     <string name="scale_factor">扫描矩形缩放比例</string>
     <string name="debug_mode">调试模式</string>
     

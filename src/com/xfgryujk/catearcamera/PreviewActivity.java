@@ -9,7 +9,11 @@ import java.util.Date;
 import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.graphics.Bitmap;
+import android.graphics.Bitmap.Config;
+import android.graphics.Canvas;
+import android.graphics.Rect;
 import android.os.Bundle;
+import android.util.DisplayMetrics;
 import android.view.View;
 import android.view.View.OnClickListener;
 import android.view.Window;
@@ -33,7 +37,7 @@ public class PreviewActivity extends Activity {
 		// No title
 		requestWindowFeature(Window.FEATURE_NO_TITLE);
 		// Full screen
-		getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN , 
+		getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN, 
 				WindowManager.LayoutParams.FLAG_FULLSCREEN);
 		
 		// Initialize UI
@@ -48,9 +52,19 @@ public class PreviewActivity extends Activity {
 			}
 		});
 
+		// Get result bitmap
 		mResultBitmap = CameraPreview.mResultBitmap;
 		CameraPreview.mResultBitmap = null;
-		mResultPreview.setImageBitmap(mResultBitmap);
+		// Resize
+		DisplayMetrics dm = new DisplayMetrics();
+		getWindowManager().getDefaultDisplay().getMetrics(dm);
+		float scale = Math.min((float)dm.heightPixels / (float)mResultBitmap.getHeight(), (float)dm.widthPixels / (float)mResultBitmap.getWidth());
+		int width = (int)(mResultBitmap.getWidth() * scale), height = (int)(mResultBitmap.getHeight() * scale);
+		Bitmap bmp = Bitmap.createBitmap(width, height, Config.ARGB_8888);
+		Canvas canvas = new Canvas(bmp);
+		canvas.drawBitmap(mResultBitmap, null, new Rect(0, 0, width, height), null);
+		// Show
+		mResultPreview.setImageBitmap(bmp);
 	}
 	
 	@SuppressLint("SimpleDateFormat")
@@ -60,7 +74,8 @@ public class PreviewActivity extends Activity {
 			// Create file
 			File dir = new File(SettingsManager.mPath);
 			if(!dir.exists())
-				if(!dir.mkdirs()) {
+				if(!dir.mkdirs())
+				{
 					Toast.makeText(this, getResources().getString(R.string.failed_to_create_directory), 
 		            		Toast.LENGTH_SHORT).show();
 					return;

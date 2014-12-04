@@ -55,8 +55,7 @@ class CameraPreview extends SurfaceView implements SurfaceHolder.Callback {
 	protected SurfaceHolder mHolder;
 	protected Camera mCamera = null;
 	protected boolean mIsFacingBack;
-	protected Camera.Size mPreviewSize;
-	protected int mPictureWidth, mPictureHeight;
+	protected int mPreviewWidth, mPreviewHeight, mPictureWidth, mPictureHeight;
 	/** Used to resize the picture to improve performance */
 	protected float mPreviewScale, mPictureScale;
 	
@@ -241,26 +240,16 @@ class CameraPreview extends SurfaceView implements SurfaceHolder.Callback {
 		params.setExposureCompensation(SettingsManager.mEV);
 		params.setWhiteBalance(SettingsManager.mWhiteBalance);
 		
-		List<Camera.Size> sizes;
-		// Largest preview size
-		sizes = params.getSupportedPreviewSizes();
-		int maxPixels = 0;
-		for (Camera.Size size : sizes)
-		{
-			int pixels = size.width * size.height;
-			if (maxPixels < pixels)
-			{
-				maxPixels    = pixels;
-				mPreviewSize = size;
-			}
-		}
-		mPreviewScale = Math.min((float)dm.heightPixels / (float)mPreviewSize.height, (float)dm.widthPixels / (float)mPreviewSize.width);
-		params.setPreviewSize(mPreviewSize.width, mPreviewSize.height);
+		List<Camera.Size> sizes = params.getSupportedPreviewSizes();
+		mPreviewWidth  = sizes.get(SettingsManager.mPreviewResolution).width;
+		mPreviewHeight = sizes.get(SettingsManager.mPreviewResolution).height;
+		mPreviewScale  = Math.min((float)dm.heightPixels / (float)mPreviewHeight, (float)dm.widthPixels / (float)mPreviewWidth);
+		params.setPreviewSize(mPreviewWidth, mPreviewHeight);
 				
 		sizes = params.getSupportedPictureSizes();
 		mPictureWidth  = sizes.get(SettingsManager.mResolution).width;
 		mPictureHeight = sizes.get(SettingsManager.mResolution).height;
-		mPictureScale  = Math.min((float)dm.heightPixels / (float)mPictureHeight, (float)dm.widthPixels / (float)mPictureWidth);
+		mPictureScale  = Math.max((float)mPreviewHeight / (float)mPictureHeight, (float)mPreviewWidth / (float)mPictureWidth);
 		params.setPictureSize(mPictureWidth, mPictureHeight);
 		
 		params.set("iso", SettingsManager.mISO);
@@ -284,8 +273,7 @@ class CameraPreview extends SurfaceView implements SurfaceHolder.Callback {
 		// Set preview callback
 		mCamera.setPreviewCallback(new PreviewCallback() {
 			public void onPreviewFrame(byte[] data, Camera camera) {
-				if(SettingsManager.mPreview)
-				{
+				if(SettingsManager.mPreview) {
 					synchronized (CameraPreview.this) {
 						mPreviewData = data;
 						CameraPreview.this.notify();
@@ -297,13 +285,13 @@ class CameraPreview extends SurfaceView implements SurfaceHolder.Callback {
 		// Initialize Mats and mPreviewBitmap
 		for(PreviewThread t : mPreviewThreads)
 			t.initializeMats();
-		mPreviewBitmap = Bitmap.createBitmap((int)(mPreviewSize.width * mPreviewScale), (int)(mPreviewSize.height * mPreviewScale), Bitmap.Config.ARGB_8888);
+		mPreviewBitmap = Bitmap.createBitmap((int)(mPreviewWidth * mPreviewScale), (int)(mPreviewHeight * mPreviewScale), Bitmap.Config.ARGB_8888);
 		mActivity.mResultPreview.setImageBitmap(mPreviewBitmap);
 		
 		// Resize
 		FrameLayout.LayoutParams lp = (FrameLayout.LayoutParams)getLayoutParams();
-		lp.width      = (int)(mPreviewSize.width * mPreviewScale);
-		lp.height     = (int)(mPreviewSize.height * mPreviewScale);
+		lp.width      = (int)(mPreviewWidth * mPreviewScale);
+		lp.height     = (int)(mPreviewHeight * mPreviewScale);
 		lp.leftMargin = (dm.widthPixels - lp.width) / 2;
 		lp.topMargin  = (dm.heightPixels - lp.height) / 2;
 		setLayoutParams(lp);
@@ -360,7 +348,7 @@ class CameraPreview extends SurfaceView implements SurfaceHolder.Callback {
 		protected Mat mYuv, mRgba, mGray;
 		
 		public synchronized void initializeMats() {
-			mYuv  = new Mat(mPreviewSize.height + mPreviewSize.height / 2, mPreviewSize.width, CvType.CV_8UC1);
+			mYuv  = new Mat(mPreviewHeight + mPreviewHeight / 2, mPreviewWidth, CvType.CV_8UC1);
 			mRgba = new Mat();
 			mGray = new Mat();
 		}
@@ -479,7 +467,6 @@ class CameraPreview extends SurfaceView implements SurfaceHolder.Callback {
 		// Convert to Mat
 		yuv.put(0, 0, YUVdata);
 		Imgproc.cvtColor(yuv, rgba, Imgproc.COLOR_YUV420sp2RGB, 4);
-		Imgproc.resize(rgba, rgba, new Size(mPreviewSize.width * mPreviewScale, mPreviewSize.height * mPreviewScale));
 		rotateMat(rgba, mIsFacingBack ? rotation : 360 - rotation);
 		if(!mIsFacingBack) // It is inverse in preview
 			Core.flip(rgba, rgba, 1);
@@ -491,7 +478,7 @@ class CameraPreview extends SurfaceView implements SurfaceHolder.Callback {
 		rotateMat(rgba, mIsFacingBack ? rotation : 360 - rotation);
 		Mat gray = new Mat();
 		Imgproc.cvtColor(rgba, gray, Imgproc.COLOR_RGBA2GRAY, 4);
-		// Improve performance
+		// Improve performance, make the result closer to that in preview
 		Imgproc.resize(gray, gray, new Size(gray.cols() * mPictureScale, gray.rows() * mPictureScale));
 		return doDetectFaces(false, gray);
 	}
@@ -503,7 +490,7 @@ class CameraPreview extends SurfaceView implements SurfaceHolder.Callback {
 		synchronized (mCascade) {
 			// Detect faces
 			mCascade.detectMultiScale(gray, faces, SettingsManager.mScaleFactor, 2, 2 // objdetect.CV_HAAR_SCALE_IMAGE
-				, new Size(SettingsManager.mMinFaceSize, SettingsManager.mMinFaceSize));
+				, new Size(gray.cols() * SettingsManager.mMinFaceScale / 100, gray.rows() * SettingsManager.mMinFaceScale / 100));
 		}
 		
 		// Remove repeated faces
@@ -525,11 +512,18 @@ class CameraPreview extends SurfaceView implements SurfaceHolder.Callback {
 				for(it1 = faces.iterator(); it1.hasNext(); )
 					if(it1.next() == r1)
 						break;
-				//it1 = faces.listIterator(faces.indexOf(r1));
 		}
 		
 		// Restore to the picture before resize()
-		if(!preview)
+		if(preview)
+			for(Rect r : faces)
+			{
+				r.x      *= mPreviewScale;
+				r.y      *= mPreviewScale;
+				r.width  *= mPreviewScale;
+				r.height *= mPreviewScale;
+			}
+		else
 			for(Rect r : faces)
 			{
 				r.x      /= mPictureScale;
@@ -587,10 +581,10 @@ class CameraPreview extends SurfaceView implements SurfaceHolder.Callback {
 			
 			// Draw cat ear
 			canvas.drawBitmap(mCatEar, null
-				, new RectF(r.x - r.width * mActivity.mXScale
-				, r.y - r.height * mActivity.mYScale
-				, r.x - r.width  * mActivity.mXScale + r.width  * mActivity.mWScale
-				, r.y - r.height * mActivity.mYScale + r.height * mActivity.mHScale)
+				, new RectF(r.x - r.width  * mActivity.mXScale
+				          , r.y - r.height * mActivity.mYScale
+				          , r.x - r.width  * mActivity.mXScale + r.width  * mActivity.mWScale
+				          , r.y - r.height * mActivity.mYScale + r.height * mActivity.mHScale)
 				, null);
 		}
 		if(SettingsManager.mDebugMode)
@@ -611,9 +605,8 @@ class CameraPreview extends SurfaceView implements SurfaceHolder.Callback {
 			mLastFPSTime = time;
 			mFrameCount  = 0;
 		}
-		String s = String.format("%s\n%d*%d %d*%d\n%.4f %.4f %.4f %.4f\n"
+		String s = String.format("%s\n%.4f %.4f %.4f %.4f\n"
 			, mFPSString
-			, mPreviewSize.width, mPreviewSize.height, mPictureWidth, mPictureHeight
 			, mActivity.mXScale, mActivity.mYScale, mActivity.mWScale, mActivity.mHScale);
 		
 		for(Rect r : faces)

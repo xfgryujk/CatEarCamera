@@ -14,6 +14,7 @@
     <string name="camera_id">Camera ID</string>
     <string name="EV">EV</string>
     <string name="white_balance">White balance</string>
+    <string name="preview_resolution">Preview resolution</string>
     <string name="resolution">Resolution</string>
     <string name="ISO">ISO</string>
     <string name="thread_count">Thread count</string>
@@ -34,7 +35,7 @@
     <string name="image_path">Image path</string>
     <string name="preview">Preview</string>
     <string name="keep_scale">Keep scale</string>
-    <string name="min_face_size">Min face size</string>
+    <string name="min_face_scale">Min face scale</string>
     <string name="scale_factor">Scale factor</string>
     <string name="debug_mode">Debug mode</string>
     

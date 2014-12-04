@@ -50,6 +50,7 @@ public class SettingsManager {
 	public static int mCameraID;
 	public static int mEV;
 	public static String mWhiteBalance;
+	public static int mPreviewResolution;
 	public static int mResolution;
 	public static String mISO;
 	public static String mPath;
@@ -61,7 +62,7 @@ public class SettingsManager {
 	public static String mImagePath;
 	public static boolean mPreview;
 	public static boolean mKeepScale;
-	public static int mMinFaceSize;
+	public static int mMinFaceScale;
 	public static float mScaleFactor;
 	public static boolean mDebugMode;
 	
@@ -76,6 +77,7 @@ public class SettingsManager {
 		mCameraID       = pref.getInt(res.getString(R.string.pref_camera_id), 0);
 		mEV             = pref.getInt(res.getString(R.string.pref_EV) + mCameraID, 0);
 		mWhiteBalance   = pref.getString(res.getString(R.string.pref_white_balance) + mCameraID, "auto");
+		mPreviewResolution = pref.getInt(res.getString(R.string.pref_preview_resolution) + mCameraID, 0);
 		mResolution     = pref.getInt(res.getString(R.string.pref_resolution) + mCameraID, 0);
 		mISO            = pref.getString(res.getString(R.string.pref_ISO) + mCameraID, "auto");
 		mPath           = pref.getString(res.getString(R.string.pref_path), Environment.getExternalStorageDirectory().getPath() + "/CatEarCamera");
@@ -87,7 +89,7 @@ public class SettingsManager {
 		if(!mPreview)
 			mMainActivity.mResultPreview.setVisibility(View.INVISIBLE);
 		mKeepScale      = pref.getBoolean(res.getString(R.string.pref_keep_scale), true);
-		mMinFaceSize    = pref.getInt(res.getString(R.string.pref_min_face_size), 100);
+		mMinFaceScale   = pref.getInt(res.getString(R.string.pref_min_face_scale), 10);
 		mScaleFactor    = pref.getFloat(res.getString(R.string.pref_scale_factor), 1.5f);
 		mDebugMode      = pref.getBoolean(res.getString(R.string.pref_debug_mode), false);
 	}
@@ -121,14 +123,17 @@ public class SettingsManager {
 		data.add(item);
 		
 		item = new HashMap<String, String>();
-		item.put("name", res.getString(R.string.resolution));
+		item.put("name", res.getString(R.string.preview_resolution));
 		Camera camera = mMainActivity.mCameraPreview.getCamera();
 		Parameters params = camera.getParameters();
-		List<Size> sizes = params.getSupportedPictureSizes();
-		String[] sizesString = new String[sizes.size()];
-		for(int i = 0; i < sizes.size(); i++)
-			sizesString[i] = sizes.get(i).width + " * " + sizes.get(i).height;
-		item.put("value", sizesString[mResolution]);
+		List<Size> sizes = params.getSupportedPreviewSizes();
+		item.put("value", sizes.get(mPreviewResolution).width + " * " + sizes.get(mPreviewResolution).height);
+		data.add(item);
+		
+		item = new HashMap<String, String>();
+		item.put("name", res.getString(R.string.resolution));
+		sizes = params.getSupportedPictureSizes();
+		item.put("value", sizes.get(mResolution).width + " * " + sizes.get(mResolution).height);
 		data.add(item);
 		
 		item = new HashMap<String, String>();
@@ -162,8 +167,8 @@ public class SettingsManager {
 		data.add(item);
 		
 		item = new HashMap<String, String>();
-		item.put("name", res.getString(R.string.min_face_size));
-		item.put("value", Integer.toString(mMinFaceSize));
+		item.put("name", res.getString(R.string.min_face_scale));
+		item.put("value", Integer.toString(mMinFaceScale) + "%");
 		data.add(item);
 		
 		item = new HashMap<String, String>();
@@ -239,10 +244,13 @@ public class SettingsManager {
 						((HashMap<String, String>)adapterView.getItemAtPosition(position)).put("value", Integer.toString(mCameraID));
 						((HashMap<String, String>)adapterView.getItemAtPosition(1)).put("value", Integer.toString(mEV));
 						((HashMap<String, String>)adapterView.getItemAtPosition(2)).put("value", mWhiteBalance);
-						List<Size> sizes2 = mMainActivity.mCameraPreview.getCamera().getParameters().getSupportedPictureSizes();
+						List<Size> sizes2 = mMainActivity.mCameraPreview.getCamera().getParameters().getSupportedPreviewSizes();
 						((HashMap<String, String>)adapterView.getItemAtPosition(3)).put("value", 
+								sizes2.get(mPreviewResolution).width + " * " + sizes2.get(mPreviewResolution).height);
+						sizes2 = mMainActivity.mCameraPreview.getCamera().getParameters().getSupportedPictureSizes();
+						((HashMap<String, String>)adapterView.getItemAtPosition(4)).put("value", 
 								sizes2.get(mResolution).width + " * " + sizes2.get(mResolution).height);
-						((HashMap<String, String>)adapterView.getItemAtPosition(4)).put("value", mISO);
+						((HashMap<String, String>)adapterView.getItemAtPosition(5)).put("value", mISO);
 						mAdapter.notifyDataSetChanged();
 					}
 				}
@@ -279,7 +287,29 @@ public class SettingsManager {
 				.show();
 				break;
 				
-			case 3: // Resolution
+			case 3: // Preview resolution
+				final List<Size> sizes2 = params.getSupportedPreviewSizes();
+				final String[] sizesString2 = new String[sizes2.size()];
+				for(int i = 0; i < sizes2.size(); i++)
+					sizesString2[i] = sizes2.get(i).width + " * " + sizes2.get(i).height;
+				builder.setTitle(res.getString(R.string.preview_resolution))
+				.setItems(sizesString2, new DialogInterface.OnClickListener() {
+					public void onClick(DialogInterface dialog, int which) {
+						if(which != mPreviewResolution)
+						{
+							mPreviewResolution = which;
+							pref.edit().putInt(res.getString(R.string.pref_preview_resolution) + mCameraID, mPreviewResolution).commit();
+							((HashMap<String, String>)adapterView.getItemAtPosition(position)).put("value", sizesString2[which]);
+							mAdapter.notifyDataSetChanged();
+							mMainActivity.mCameraPreview.resetCamera();
+						}
+					}
+				})
+				.create()
+				.show();
+				break;
+				
+			case 4: // Resolution
 				final List<Size> sizes = params.getSupportedPictureSizes();
 				final String[] sizesString = new String[sizes.size()];
 				for(int i = 0; i < sizes.size(); i++)
@@ -301,32 +331,23 @@ public class SettingsManager {
 				.show();
 				break;
 				
-			case 4: // ISO ***** Not every device support!
+			case 5: // ISO ***** Not every device support!
 				String flat = params.flatten();
 				//Log.i("ISO test", flat);
 				String values_keyword = null;
-				//String iso_keyword = null;
-				if(flat.contains("iso-values")) {
-					// most used keywords
+				if(flat.contains("iso-values")) // Most used keywords
 					values_keyword = "iso-values";
-					//iso_keyword	= "iso";
-				} else if(flat.contains("iso-mode-values")) {
-					// google galaxy nexus keywords
+				else if(flat.contains("iso-mode-values")) // Google galaxy nexus keywords
 					values_keyword = "iso-mode-values";
-					//iso_keyword	= "iso";
-				} else if(flat.contains("iso-speed-values")) {
-					// micromax a101 keywords
+				else if(flat.contains("iso-speed-values")) // Micromax a101 keywords
 					values_keyword = "iso-speed-values";
-					//iso_keyword	= "iso-speed";
-				} else if(flat.contains("nv-picture-iso-values")) {
-					// LG dual p990 keywords
+				else if(flat.contains("nv-picture-iso-values")) // LG dual p990 keywords
 					values_keyword = "nv-picture-iso-values";
-					//iso_keyword	= "nv-picture-iso";
-				}
-				// add other eventual keywords here...
+				// Add other eventual keywords here...
 				String iso = null;
-				if(values_keyword != null) {
-					// flatten contains the iso key!!
+				if(values_keyword != null)
+				{
+					// Flatten contains the ISO key!!
 					iso = flat.substring(flat.indexOf(values_keyword));
 					iso = iso.substring(iso.indexOf("=") + 1);
 					if(iso.contains(";"))
@@ -334,10 +355,9 @@ public class SettingsManager {
 					
 					//for(String str : isoValues)
 					//	Log.i("ISO test", str);
-				}/* else {
-					// iso not supported in a known way
-					Log.i("ISO test", "ISO is not supported");
-				}*/
+				}
+				//else // ISO not supported in a known way
+				//	Log.i("ISO test", "ISO is not supported");
 
 				final String[] defaultISOs = {"auto", "50", "100", "200", "400", "800", "1600", "3200"};
 				final String[] isoValues = values_keyword != null ? iso.split(",") : defaultISOs;
@@ -365,7 +385,7 @@ public class SettingsManager {
 				.show();
 				break;
 				
-			case 5: // Path
+			case 6: // Path
 				final EditText edit = new EditText(mMainActivity);
 				edit.setText(mPath);
 				edit.setSingleLine();
@@ -383,7 +403,7 @@ public class SettingsManager {
 				.show();
 				break;
 				
-			case 6: // Image type
+			case 7: // Image type
 				final String[] imageTypes = res.getStringArray(R.array.image_type_string);
 				builder.setTitle(res.getString(R.string.image_type))
 				.setItems(imageTypes, new DialogInterface.OnClickListener() {
@@ -401,11 +421,11 @@ public class SettingsManager {
 				.show();
 				break;
 				
-			case 7: // Image path
+			case 8: // Image path
 				mMainActivity.startActivityForResult(new Intent(Intent.ACTION_GET_CONTENT).setType("image/*").addCategory(Intent.CATEGORY_OPENABLE), 0);
 				break;
 				
-			case 8: // Preview
+			case 9: // Preview
 				mPreview = !mPreview;
 				pref.edit().putBoolean(res.getString(R.string.pref_preview), mPreview).commit();
 				((HashMap<String, String>)adapterView.getItemAtPosition(position)).put("value", res.getString(mPreview ? R.string.yes : R.string.no));
@@ -413,26 +433,26 @@ public class SettingsManager {
 				mMainActivity.mResultPreview.setVisibility(mPreview ? View.VISIBLE : View.INVISIBLE);
 				break;
 				
-			case 9: // Keep scale
+			case 10: // Keep scale
 				mKeepScale = !mKeepScale;
 				pref.edit().putBoolean(res.getString(R.string.pref_keep_scale), mKeepScale).commit();
 				((HashMap<String, String>)adapterView.getItemAtPosition(position)).put("value", res.getString(mKeepScale ? R.string.yes : R.string.no));
 				mAdapter.notifyDataSetChanged();
 				break;
 				
-			case 10: // Min face size
-				showSeekBarDialog(res.getString(R.string.min_face_size), 20, 
-						200, mMinFaceSize, new OnSeekBarDialogPositiveButton() {
+			case 11: // Min face size
+				showSeekBarDialog(res.getString(R.string.min_face_scale), 5, 
+						90, mMinFaceScale, new OnSeekBarDialogPositiveButton() {
 					public void onClick(int progress) {
-						mMinFaceSize = progress;
-						pref.edit().putInt(res.getString(R.string.pref_min_face_size), mMinFaceSize).commit();
-						((HashMap<String, String>)adapterView.getItemAtPosition(position)).put("value", Integer.toString(mMinFaceSize));
+						mMinFaceScale = progress;
+						pref.edit().putInt(res.getString(R.string.pref_min_face_scale), mMinFaceScale).commit();
+						((HashMap<String, String>)adapterView.getItemAtPosition(position)).put("value", Integer.toString(mMinFaceScale));
 						mAdapter.notifyDataSetChanged();
 					}
 				});
 				break;
 				
-			case 11: // Scale factor
+			case 12: // Scale factor
 				final EditText edit2 = new EditText(mMainActivity);
 				edit2.setText(Float.toString(mScaleFactor));
 				edit2.setInputType(InputType.TYPE_CLASS_NUMBER | InputType.TYPE_NUMBER_FLAG_DECIMAL);
@@ -458,7 +478,7 @@ public class SettingsManager {
 				.show();
 				break;
 				
-			case 12: // Debug mode
+			case 13: // Debug mode
 				mDebugMode = !mDebugMode;
 				pref.edit().putBoolean(res.getString(R.string.pref_debug_mode), mDebugMode).commit();
 				((HashMap<String, String>)adapterView.getItemAtPosition(position)).put("value", res.getString(mDebugMode ? R.string.yes : R.string.no));
@@ -488,7 +508,7 @@ public class SettingsManager {
 			
 			PreferenceManager.getDefaultSharedPreferences(mMainActivity).edit()
 				.putString(mMainActivity.getResources().getString(R.string.pref_image_path), mImagePath).commit();
-			((HashMap<String, String>)mAdapter.getItem(7)).put("value", mImagePath);
+			((HashMap<String, String>)mAdapter.getItem(8)).put("value", mImagePath);
 			mAdapter.notifyDataSetChanged();
 			
 			if(mImageType == -1) // Is custom image
