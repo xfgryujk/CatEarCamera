@@ -34,10 +34,10 @@ import android.widget.AdapterView.OnItemClickListener;
 import android.widget.EditText;
 import android.widget.ListView;
 import android.widget.SeekBar;
-import android.widget.Toast;
 import android.widget.SeekBar.OnSeekBarChangeListener;
 import android.widget.SimpleAdapter;
 import android.widget.TextView;
+import android.widget.Toast;
 
 public class SettingsManager {
 	protected static MainActivity mMainActivity;
@@ -204,9 +204,9 @@ public class SettingsManager {
 			mMainActivity.getWindowManager().getDefaultDisplay().getMetrics(dm);
 			LayoutParams lp = dialogWindow.getAttributes();
 			lp.gravity = Gravity.LEFT | Gravity.TOP;
-			lp.x       = 30;
-			lp.y       = 20;
-			lp.height  = Math.min(dm.heightPixels - 40, (int)((mListView.getCount() * 36 + 3.5) * dm.density));
+			lp.x       = (int)(20.0f * dm.density);
+			lp.y       = (int)(13.3f * dm.density);
+			lp.height  = Math.min(dm.heightPixels - (int)(26.6f * dm.density), (int)((mListView.getCount() * 36 + 3.5) * dm.density));
 			mDialog.show();
 			dialogWindow.setAttributes(lp);
 		}

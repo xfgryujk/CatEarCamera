@@ -514,9 +514,9 @@ class CameraPreview extends SurfaceView implements SurfaceHolder.Callback {
 						break;
 		}
 		
-		// Restore to the picture before resize()
+		
 		if(preview)
-			for(Rect r : faces)
+			for(Rect r : faces) // To screen
 			{
 				r.x      *= mPreviewScale;
 				r.y      *= mPreviewScale;
@@ -524,7 +524,7 @@ class CameraPreview extends SurfaceView implements SurfaceHolder.Callback {
 				r.height *= mPreviewScale;
 			}
 		else
-			for(Rect r : faces)
+			for(Rect r : faces) // Restore to the picture before resize()
 			{
 				r.x      /= mPictureScale;
 				r.y      /= mPictureScale;
