@@ -23,6 +23,7 @@ import android.preference.PreferenceManager;
 import android.provider.MediaStore;
 import android.text.InputType;
 import android.util.DisplayMetrics;
+import android.util.Log;
 import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -333,7 +334,7 @@ public class SettingsManager {
 				
 			case 5: // ISO ***** Not every device support!
 				String flat = params.flatten();
-				//Log.i("ISO test", flat);
+				Log.i("ISO test", flat);
 				String values_keyword = null;
 				if(flat.contains("iso-values")) // Most used keywords
 					values_keyword = "iso-values";
